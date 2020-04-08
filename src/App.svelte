@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Hammer from 'hammerjs';
 
 	import Chart from './components/Chart.svelte';
 	// https://data.worldbank.org/indicator/sp.pop.grow (2018 data)
@@ -7,6 +8,9 @@
 
 	// https://data.worldbank.org/indicator/SP.POP.TOTL (2018 data)
 	import population from './population.json';
+
+	let footer;
+	let hammer;
 
 	let data;
 	let infectionIncrement = 0;
@@ -112,11 +116,19 @@
 		adjustValues(e.deltaY);
 	}
 
+	function handleSwipe(e) {
+		e.preventDefault();
+		adjustValues(e.deltaY);
+	}
+
 	onMount(async() => {
 		await getData();
 		infectionIncrement = await getAverageInfected();
 		recoveredIncrement = await getLatestRecovered();
 		await setInitialSIR();
+
+		hammer = new Hammer(footer);
+		hammer.on('swipe', handleSwipe);
 
 		loaded = true;
 	});
@@ -170,6 +182,6 @@
 		<Chart {s} {i} {r} {m} />
 	{/if}
 </main>
-<footer on:wheel={handleWheel}>
+<footer on:wheel={handleWheel} bind:this={footer}>
 	<h3>{date}</h3>
 </footer>
