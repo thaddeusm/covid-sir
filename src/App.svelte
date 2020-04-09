@@ -117,7 +117,6 @@
 	}
 
 	function handleSwipe(e) {
-		e.preventDefault();
 		adjustValues(e.deltaY);
 	}
 
