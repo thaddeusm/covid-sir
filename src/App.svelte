@@ -17,9 +17,7 @@
 
 	let touchDistance, 
 		startX, 
-		startY, 
-		startTime,
-		elapsedTime;
+		startY;
 
 	let s = 0;
 	let i = 0;
@@ -84,32 +82,57 @@
 	}
 
 	function adjustValues(direction) {
-		// for (const day of data[scope]) {
-
-		// }
-
 		if (direction > 0) {
 			console.log('increment');
 			// let today = formatDate(new Date().toISOString());
-
-			m = population[scope];
-			if (s < 0) {
-				i -= (recoveredIncrement) * direction;
-			} else {
-				i += (infectionIncrement - recoveredIncrement) * direction;
-			}
-			r += recoveredIncrement * direction;
-			s = m - i - r;
-
 			datePosition += direction;
 
-			if (datePosition == -1 || datePosition == 1) {
-				date = `${datePosition} day`;
+			if (datePosition < 0) {
+				if (data[scope][Math.abs(datePosition)]) {
+					m = population[scope];
+
+					i = data[scope][Math.abs(datePosition)].confirmed
+					r = data[scope][Math.abs(datePosition)].recovered + data[scope][Math.abs(datePosition)].deaths;
+					s = m - i - r;
+				}
 			} else {
-				date = `${datePosition} days`;
+				m = population[scope];
+				if (s < 0) {
+					i -= (recoveredIncrement) * direction;
+				} else {
+					i += (infectionIncrement - recoveredIncrement) * direction;
+				}
+				r += recoveredIncrement * direction;
+				s = m - i - r;
 			}
 		} else {
-			console.log('decrement');
+			datePosition -= Math.abs(direction);
+
+			if (datePosition < 0) {
+				if (data[scope][Math.abs(datePosition)]) {
+					m = population[scope];
+
+					i = data[scope][Math.abs(datePosition)].confirmed
+					r = data[scope][Math.abs(datePosition)].recovered + data[scope][Math.abs(datePosition)].deaths;
+					s = m - i - r;
+				}
+			} else {
+				m = population[scope];
+				if (s < 0) {
+					i -= (recoveredIncrement) * direction;
+				} else {
+					i += (infectionIncrement - recoveredIncrement) * direction;
+				}
+				r += recoveredIncrement * direction;
+				s = m - i - r;
+			}
+
+		}
+
+		if (datePosition == -1 || datePosition == 1) {
+			date = `${datePosition} day`;
+		} else {
+			date = `${datePosition} days`;
 		}
 	}
 
@@ -123,7 +146,6 @@
         touchDistance = 0
         startX = touchobj.pageX
         startY = touchobj.pageY
-        startTime = new Date().getTime() // record time when finger first makes contact with surface
         e.preventDefault()
 	}
 
@@ -133,11 +155,17 @@
 
 	function handleTouchEnd(e) {
 		let touchobj = e.changedTouches[0]
-        touchDistance = touchobj.pageX - startX // get total dist traveled by finger while in contact with surface
-        elapsedTime = new Date().getTime() - startTime // get time elapsed
-        // // check that elapsed time is within specified, horizontal dist traveled >= threshold, and vertical dist traveled <= 100
-        // let swiperightBol = (elapsedTime <= allowedTime && dist >= threshold && Math.abs(touchobj.pageY - startY) <= 100)
-        adjustValues(Math.ceil(touchDistance * 50));
+        touchDistance = touchobj.pageY - startY
+
+        let delta;
+
+        if (touchDistance < 0) {
+        	delta = touchDistance * 2;
+        } else {
+        	delta = touchDistance * 8;
+        }
+
+        adjustValues(delta);
         e.preventDefault()
 	} 
 

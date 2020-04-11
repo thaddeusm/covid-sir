@@ -30,6 +30,10 @@
 	.r {
 		background: var(--green);
 	}
+
+	section {
+		transition: all .3s ease;
+	}
 </style>
 
 <div class="circle">
