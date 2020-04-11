@@ -1,6 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import Hammer from 'hammerjs';
 
 	import Chart from './components/Chart.svelte';
 	// https://data.worldbank.org/indicator/sp.pop.grow (2018 data)
@@ -9,15 +8,18 @@
 	// https://data.worldbank.org/indicator/SP.POP.TOTL (2018 data)
 	import population from './population.json';
 
-	let footer;
-	let hammer;
-
 	let data;
 	let infectionIncrement = 0;
 	let recoveredIncrement = 0;
 	let datePosition = 0;
 	let scope = 'US';
 	let date;
+
+	let touchDistance, 
+		startX, 
+		startY, 
+		startTime,
+		elapsedTime;
 
 	let s = 0;
 	let i = 0;
@@ -116,18 +118,34 @@
 		adjustValues(e.deltaY);
 	}
 
-	function handleSwipe(e) {
-		adjustValues(e.deltaY);
+	function handleTouchStart(e) {
+		let touchobj = e.changedTouches[0]
+        touchDistance = 0
+        startX = touchobj.pageX
+        startY = touchobj.pageY
+        startTime = new Date().getTime() // record time when finger first makes contact with surface
+        e.preventDefault()
 	}
+
+	function handleTouchMove(e) {
+		e.preventDefault();
+	}
+
+	function handleTouchEnd(e) {
+		let touchobj = e.changedTouches[0]
+        touchDistance = touchobj.pageX - startX // get total dist traveled by finger while in contact with surface
+        elapsedTime = new Date().getTime() - startTime // get time elapsed
+        // // check that elapsed time is within specified, horizontal dist traveled >= threshold, and vertical dist traveled <= 100
+        // let swiperightBol = (elapsedTime <= allowedTime && dist >= threshold && Math.abs(touchobj.pageY - startY) <= 100)
+        adjustValues(Math.ceil(touchDistance * 50));
+        e.preventDefault()
+	} 
 
 	onMount(async() => {
 		await getData();
 		infectionIncrement = await getAverageInfected();
 		recoveredIncrement = await getLatestRecovered();
 		await setInitialSIR();
-
-		hammer = new Hammer(footer);
-		hammer.on('swipe', handleSwipe);
 
 		loaded = true;
 	});
@@ -181,6 +199,6 @@
 		<Chart {s} {i} {r} {m} />
 	{/if}
 </main>
-<footer on:wheel={handleWheel} bind:this={footer}>
+<footer on:wheel={handleWheel} on:touchstart={handleTouchStart} on:touchmove={handleTouchMove} on:touchend={handleTouchEnd}>
 	<h3>{date}</h3>
 </footer>
