@@ -26,6 +26,8 @@
 
 	let loaded = false;
 
+	$: pandemicEnded = s == 0 && i == 0;
+
 	async function getAverageInfected() {
 		let country = data[scope];
 
@@ -37,7 +39,6 @@
 
 		let averageInfected = cumulativeInfected / country.length; 
 
-		console.log(averageInfected);
 		return averageInfected;
 	}
 
@@ -48,7 +49,6 @@
 
 		let latest = latestDay.recovered + latestDay.deaths; 
 
-		console.log(latest);
 		return latest;
 	}
 
@@ -82,57 +82,41 @@
 	}
 
 	function adjustValues(direction) {
-		if (direction > 0) {
-			console.log('increment');
-			// let today = formatDate(new Date().toISOString());
-			datePosition += direction;
+		m = population[scope];
 
-			if (datePosition < 0) {
-				if (data[scope][Math.abs(datePosition)]) {
-					m = population[scope];
+		datePosition += direction;
 
-					i = data[scope][Math.abs(datePosition)].confirmed
-					r = data[scope][Math.abs(datePosition)].recovered + data[scope][Math.abs(datePosition)].deaths;
-					s = m - i - r;
-				}
-			} else {
-				m = population[scope];
-				if (s < 0) {
-					i -= (recoveredIncrement) * direction;
-				} else {
-					i += (infectionIncrement - recoveredIncrement) * direction;
-				}
-				r += recoveredIncrement * direction;
-				s = m - i - r;
-			}
+		// check for current position (past, present, or future)
+		if (datePosition < 0 && data[scope][Math.abs(datePosition)]) {
+			// search for real data from before today
+			i = data[scope][Math.abs(datePosition)].confirmed
+			r = data[scope][Math.abs(datePosition)].recovered + data[scope][Math.abs(datePosition)].deaths;
 		} else {
-			datePosition -= Math.abs(direction);
-
-			if (datePosition < 0) {
-				if (data[scope][Math.abs(datePosition)]) {
-					m = population[scope];
-
-					i = data[scope][Math.abs(datePosition)].confirmed
-					r = data[scope][Math.abs(datePosition)].recovered + data[scope][Math.abs(datePosition)].deaths;
-					s = m - i - r;
-				}
+			// if there is no susceptible population, reduce those recovered
+			if (s <= 0 && i > 0) {
+				i -= recoveredIncrement * direction;
 			} else {
-				m = population[scope];
-				if (s < 0) {
-					i -= (recoveredIncrement) * direction;
-				} else {
-					i += (infectionIncrement - recoveredIncrement) * direction;
-				}
-				r += recoveredIncrement * direction;
-				s = m - i - r;
+				i += (infectionIncrement - recoveredIncrement) * direction;
 			}
 
+			r += recoveredIncrement * direction;
 		}
 
 		if (datePosition == -1 || datePosition == 1) {
 			date = `${datePosition} day`;
 		} else {
 			date = `${datePosition} days`;
+		}
+
+		if (i < 0) {
+			i = 0;
+		}
+
+		if (r > m) {
+			r = m;
+			s = 0;
+		} else {
+			s = m - i - r;
 		}
 	}
 
@@ -227,6 +211,14 @@
 		<Chart {s} {i} {r} {m} />
 	{/if}
 </main>
-<footer on:wheel={handleWheel} on:touchstart={handleTouchStart} on:touchmove={handleTouchMove} on:touchend={handleTouchEnd}>
-	<h3>{date}</h3>
-</footer>
+{#if pandemicEnded}
+	<footer>
+		<h3>
+			pandemic ended at around {date}
+		</h3>
+	</footer>
+{:else}
+	<footer on:wheel={handleWheel} on:touchstart={handleTouchStart} on:touchmove={handleTouchMove} on:touchend={handleTouchEnd}>
+		<h3>{date}</h3>
+	</footer>
+{/if}
