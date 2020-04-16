@@ -214,7 +214,7 @@
 {#if pandemicEnded}
 	<footer>
 		<h3>
-			pandemic ended at around {date}
+			pandemic ends at around {date}
 		</h3>
 	</footer>
 {:else}
